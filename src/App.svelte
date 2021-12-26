@@ -2,72 +2,74 @@
   import { onMount } from "svelte";
   import http from "./request-helper";
   import OperationDocsStore from "./operationDocsStore";
-  import { ApolloClient, InMemoryCache, HttpLink, split } from "@apollo/client";
-  import { setClient, subscribe } from "svelte-apollo";
-  import { WebSocketLink } from "@apollo/client/link/ws";
-  import { getMainDefinition } from "@apollo/client/utilities";
+  import { todos, isAuthenticated, user, token } from "./store";
+  import auth from "./authService";
+  let auth0Client;
 
-  function createApolloClient() {
-    const httpLink = new HttpLink({
-      uri: "https://web-labs-35-2.herokuapp.com/v1/graphql",
-    });
-    const cache = new InMemoryCache();
-    const wsLink = new WebSocketLink({
-      uri: "wss://web-labs-35-2.herokuapp.com/v1/graphql",
-      options: {
-        reconnect: true,
-      },
-    });
-    const link = split(
-      ({ query }) => {
-        const definition = getMainDefinition(query);
-        return (
-          definition.kind === "OperationDefinition" &&
-          definition.operation === "subscription"
-        );
-      },
-      wsLink,
-      httpLink,
-    );
-    return new ApolloClient({
-      link,
-      cache,
-    });
-  }
+  onMount(async () => {
+    auth0Client = await auth.createClient();
 
-  const client = createApolloClient();
-  setClient(client);
-  const todos = subscribe(OperationDocsStore.subscribeToAll());
-
+    isAuthenticated.set(await auth0Client.isAuthenticated());
+    user.set(await auth0Client.getUser());
+    if (isAuthenticated) {
+      const accessToken = await auth0Client.getIdTokenClaims();
+      if (accessToken) token.set(accessToken.__raw);
+    }
+  });
+  token.subscribe(async (value) => {
+    if (value) {
+      const result = await http.startFetchMyQuery(OperationDocsStore.getAll());
+      console.log(result);
+      todos.set(result.todo);
+    }
+  });
   const addTodo = async () => {
     const name = prompt("name") || "";
-    await http.startExecuteMyMutation(OperationDocsStore.addOne(name));
+    const { insert_todo_one } = await http.startExecuteMyMutation(
+      OperationDocsStore.addOne(name),
+    );
+    todos.update((n) => [...n, insert_todo_one]);
   };
 
   const deleteTodo = async () => {
     const name = prompt("which todo to delete?") || "";
     if (name) {
       await http.startExecuteMyMutation(OperationDocsStore.deleteByName(name));
+      todos.update((n) => n.filter((item) => item.title !== name));
     }
   };
+
+  function login() {
+    auth.loginWithPopup(auth0Client);
+  }
+
+  function logout() {
+    auth.logout(auth0Client);
+  }
 </script>
 
 <main>
-  {#if $todos.loading}
-    <h1>Loading...</h1>
-  {:else if $todos.error}
-    <h1>{$todos.error}</h1>
-  {:else}
-    <button on:click={addTodo}>Add new todo</button>
-    <button on:click={deleteTodo}>Delete todo</button>
+  {#if $isAuthenticated}
+    {#if $todos.loading}
+      <h1>Loading...</h1>
+    {:else if $todos.error}
+      <h1>{$todos.error}</h1>
+    {:else}
+      <button on:click={logout}>Logout</button>
 
-    {#each $todos.data.todo as todo}
-      <div>
-        <p>todo name: {todo.title}</p>
-        <p>user id: {todo.user_id}</p>
-        <hr />
-      </div>
-    {/each}
+      <button on:click={addTodo}>Add new todo</button>
+      <button on:click={deleteTodo}>Delete todo</button>
+
+      {#each $todos as todo}
+        <div>
+          <p>todo name: {todo.title}</p>
+          <p>user id: {todo.user_id}</p>
+          <hr />
+        </div>
+      {/each}
+    {/if}
+  {:else}
+    <button on:click={login}>Login</button>
   {/if}
 </main>
 

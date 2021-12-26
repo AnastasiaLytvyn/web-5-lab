@@ -1,5 +1,3 @@
-import { gql } from "@apollo/client";
-
 export default class OperationDocsStore {
   static getAll() {
     return `query MyQuery {
@@ -28,17 +26,5 @@ export default class OperationDocsStore {
         affected_rows
       }
     }`;
-  }
-
-  static subscribeToAll() {
-    return gql`
-      subscription MySubscription {
-        todo {
-          user_id
-          title
-          id
-        }
-      }
-    `;
   }
 }
