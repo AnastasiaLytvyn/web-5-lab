@@ -31,12 +31,9 @@
     todos.update((n) => [...n, insert_todo_one]);
   };
 
-  const deleteTodo = async () => {
-    const name = prompt("which todo to delete?") || "";
-    if (name) {
-      await http.startExecuteMyMutation(OperationDocsStore.deleteByName(name));
-      todos.update((n) => n.filter((item) => item.title !== name));
-    }
+  const deleteTodo = async (id) => {
+    await http.startExecuteMyMutation(OperationDocsStore.deleteById(id));
+    todos.update((n) => n.filter((item) => item.id !== id));
   };
 
   function login() {
@@ -58,12 +55,13 @@
       <button on:click={logout}>Logout</button>
 
       <button on:click={addTodo}>Add new todo</button>
-      <button on:click={deleteTodo}>Delete todo</button>
 
       {#each $todos as todo}
         <div>
           <p>todo name: {todo.title}</p>
           <p>user id: {todo.user_id}</p>
+          <!-- delete todo by id -->
+          <button on:click={() => deleteTodo(todo.id)}>Delete todo</button>
           <hr />
         </div>
       {/each}
