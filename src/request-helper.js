@@ -3,7 +3,7 @@ import { token } from "./store";
 
 class RequestHelper {
   constructor() {
-    this.API_URL = "https://web-labs35.herokuapp.com/v1/graphql";
+    this.API_URL = "https://web-labs-kpi.herokuapp.com/v1/graphql";
   }
 
   async fetchGraphQL(operationsDoc, operationName, variables) {
