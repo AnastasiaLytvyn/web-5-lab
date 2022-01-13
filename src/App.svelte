@@ -25,33 +25,29 @@
     }
   });
   const addTodo = async () => {
-   
     const name = prompt("name") || "";
     try {
       userMsg = "Adding...";
       const { insert_todo_one } = await http.startExecuteMyMutation(
-      OperationDocsStore.addOne(name),
-    );
-    todos.update((n) => [...n, insert_todo_one]);
-     userMsg = null;
+        OperationDocsStore.addOne(name),
+      );
+      todos.update((n) => [...n, insert_todo_one]);
+      userMsg = null;
     } catch (err) {
       userMsg = `Error: ${err.message}`;
       setTimeout(() => (userMsg = null), 5000);
     }
-
   };
 
   const deleteTodo = async (id) => {
-    try{
+    try {
       userMsg = "Deleting...";
       await http.startExecuteMyMutation(OperationDocsStore.deleteById(id));
       todos.update((n) => n.filter((item) => item.id !== id));
       userMsg = null;
-    }
-    catch(err){
+    } catch (err) {
       userMsg = `Error: ${err.message}`;
       setTimeout(() => (userMsg = null), 5000);
-
     }
   };
 
