@@ -17,9 +17,9 @@ class RequestHelper {
       headers: {
         Authorization: `Bearer ${get(token)}`,
       },
+    }).then((result) => {
+      return result.json();
     });
-
-    return await result.json();
   }
   fetchMyQuery(operationsDoc) {
     return this.fetchGraphQL(operationsDoc, "MyQuery", {});
@@ -45,14 +45,9 @@ class RequestHelper {
 
   async startExecuteMyMutation(operationsDoc) {
     const { errors, data } = await this.executeMyMutation(operationsDoc);
-
     if (errors) {
-      // handle those errors like a pro
-      console.error(errors);
+      throw new Error(errors[0].message);
     }
-
-    // do something great with this precious data
-    console.log(data);
     return data;
   }
 }
